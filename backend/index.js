@@ -30,13 +30,6 @@ const sendTelegramAlert = (message) => {
 // ========== DAILY TELEGRAM UPDATE ROUTE ==========
 
 app.post('/api/sendDailyUpdate', async (req, res) => {
-  const authHeader = req.headers['authorization'];
-
-  // Check if Authorization header is present and valid
-  if (!authHeader || authHeader !== `Bearer ${process.env.DAILY_UPDATE_SECRET}`) {
-    return res.status(401).send('Unauthorized');  // If invalid or missing, return Unauthorized error
-  }
-
   const now = new Date();
   const MYtime = now.toLocaleString('en-MY', { timeZone: 'Asia/Kuching' });
 
@@ -84,6 +77,7 @@ Stay prepared and safe!
     res.status(500).send('Failed to send daily update');
   }
 });
+
 
 // ========== MAIN FORECAST ROUTE ==========
 app.get('/api/weather', async (req, res) => {
