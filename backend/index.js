@@ -12,7 +12,7 @@ const lat = 5.969;
 const lon = 116.664;
 const WEATHER_API = process.env.WEATHER_API;
 const TELEGRAM_API_TOKEN = process.env.TELEGRAM_API_TOKEN;
-const TELEGRAM_CHAT_ID = '895380948'; // Replace with your actual channel or group ID
+const TELEGRAM_CHAT_ID = '-4792601476'; // Replace with your actual channel or group ID
 
 const bot = new TelegramBot(TELEGRAM_API_TOKEN);
 
