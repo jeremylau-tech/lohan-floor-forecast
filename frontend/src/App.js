@@ -19,6 +19,11 @@ function App() {
   const [forecast, setForecast] = useState(null);
   const [status, setStatus] = useState('loading');
   const [activeSection, setActiveSection] = useState('forecast');
+  const [password, setPassword] = useState('');
+const [isPasswordCorrect, setIsPasswordCorrect] = useState(false);
+const [isModalOpen, setIsModalOpen] = useState(false);
+
+
 
   useEffect(() => {
     let timeoutId;
@@ -57,11 +62,32 @@ function App() {
     if (status === 'error') return <p style={{ color: 'red' }}>❌ Failed to load forecast. Please refresh later.</p>;
     return null;
   };
+
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value);
+  };
+
+  const handlePasswordSubmit = () => {
+    if (password === 'abc123') {
+      setIsPasswordCorrect(true);
+      setIsModalOpen(false); // Close the modal after successful password entry
+    } else {
+      alert('❌ Incorrect password');
+    }
+  };
+  
+
+
+
   const sendDailyUpdate = async () => {
+    if (!isPasswordCorrect) {
+      alert('❌ Please enter the correct password first!');
+      return;
+    }
+  
     try {
       const res = await fetch('https://lohan-floor-forecast.onrender.com/api/sendDailyUpdate', {
         method: 'POST',
-        // Authorization header is removed since no authentication is required
       });
       if (res.ok) {
         alert('✅ Daily update sent to Telegram!');
@@ -74,22 +100,30 @@ function App() {
     }
   };
   
+  
 
   const renderForecast = () => {
     if (!forecast || !forecast.current || !forecast.historicalRainfall || !forecast.multiDayForecast) {
       return <p>Loading forecast...</p>;
     }
   
+    // Function to get the day name (e.g., Monday, Tuesday)
+    const getDayName = (dateString) => {
+      const date = new Date(dateString);
+      const options = { weekday: 'long' };
+      return new Intl.DateTimeFormat('en-US', options).format(date);
+    };
+  
     const riskLevel = forecast.current.risk;
     const futureRisk = forecast.riskNext3Days?.level || 'Low';
     const futureRiskColor = futureRisk === 'High' ? '#ff4d4d' : '#4CAF50';
   
     const chartData = {
-      labels: Array.from({ length: 7 }, (_, i) => `Day ${i + 1}`),
+      labels: forecast.multiDayForecast.map((entry) => getDayName(entry.time)),  // Extract days of the week
       datasets: [
         {
           label: 'Rainfall (mm)',
-          data: forecast.historicalRainfall,
+          data: forecast.multiDayForecast.map((entry) => parseFloat(entry.rain)),  // Extract rainfall values
           fill: true,
           backgroundColor: 'rgba(0, 123, 255, 0.1)',
           borderColor: '#007BFF',
@@ -111,10 +145,10 @@ function App() {
           fontFamily: 'Segoe UI, sans-serif',
         }}
       >
-        {/* Current Rain Forecast */}
+        {/* Rain Forecast */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
           <FaTint size={24} color="#007BFF" />
-          <h2 style={{ fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>Rain Forecast (Next 6 Hours)</h2>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: '600', margin: 0 }}>Rain Forecast (Next 3 Days)</h2>
         </div>
   
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
@@ -166,40 +200,32 @@ function App() {
         <div>
           <h3 style={{ fontSize: '1.2rem', marginBottom: '8px', color: '#333' }}>📅 Detailed 3-Day Forecast</h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-  {forecast.multiDayForecast.map((entry, index) => {
-    const rain = parseFloat(entry.rain);
-
-    // Define color by threshold
-    let bgColor = '#e0f7e9'; // Green
-    if (rain >= 1.0 && rain < 5.0) bgColor = '#fff4cc'; // Yellow
-    if (rain >= 5.0) bgColor = '#ffe6e6'; // Light Red
-
-    return (
-      <div
-        key={index}
-        style={{
-          flex: '1 0 120px',
-          padding: '12px',
-          backgroundColor: bgColor,
-          border: '1px solid #ccc',
-          borderRadius: '8px',
-          fontSize: '0.85rem',
-        }}
-      >
-        <strong>
-          {new Date(entry.time).toLocaleString('en-MY', {
-            timeZone: 'Asia/Kuching',
-            weekday: 'short',
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </strong>
-        <p style={{ margin: '4px 0' }}>🌧 {rain} mm</p>
-      </div>
-    );
-  })}
-</div>
-
+            {forecast.multiDayForecast.map((entry, index) => {
+              const rain = parseFloat(entry.rain);
+  
+              // Define color by threshold
+              let bgColor = '#e0f7e9'; // Green
+              if (rain >= 1.0 && rain < 5.0) bgColor = '#fff4cc'; // Yellow
+              if (rain >= 5.0) bgColor = '#ffe6e6'; // Light Red
+  
+              return (
+                <div
+                  key={index}
+                  style={{
+                    flex: '1 0 120px',
+                    padding: '12px',
+                    backgroundColor: bgColor,
+                    border: '1px solid #ccc',
+                    borderRadius: '8px',
+                    fontSize: '0.85rem',
+                  }}
+                >
+                  <strong>{getDayName(entry.time)}</strong>
+                  <p style={{ margin: '4px 0' }}>🌧 {rain} mm</p>
+                </div>
+              );
+            })}
+          </div>
         </div>
   
         {/* Historical Rainfall Chart */}
@@ -211,7 +237,6 @@ function App() {
     );
   };
   
-
   const renderEducationSection = () => {
     return <EducationSection />;
   };
@@ -357,20 +382,94 @@ function App() {
 
           {/* Button to send Telegram daily update */}
           <button
-            onClick={sendDailyUpdate}
-            style={{
-              marginTop: '20px',
-              padding: '12px 24px',
-              fontSize: '1rem',
-              backgroundColor: '#28a745',
-              color: '#fff',
-              borderRadius: '8px',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            📬 Send Today's Update to Telegram
-          </button>
+  onClick={() => setIsModalOpen(true)}
+  style={{
+    marginTop: '20px',
+    padding: '12px 24px',
+    fontSize: '1rem',
+    backgroundColor: '#28a745',
+    color: '#fff',
+    borderRadius: '8px',
+    border: 'none',
+    cursor: 'pointer',
+  }}
+>
+  📬 Send Today's Update to Telegram
+</button>
+
+{isModalOpen && (
+  <div
+    style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+    }}
+  >
+    <div
+      style={{
+        backgroundColor: '#fff',
+        padding: '20px',
+        borderRadius: '8px',
+        width: '300px',
+        textAlign: 'center',
+      }}
+    >
+      <h3>Enter Password</h3>
+      <input
+        type="password"
+        value={password}
+        onChange={handlePasswordChange}
+        placeholder="Enter password"
+        style={{
+          padding: '8px',
+          width: '100%',
+          marginBottom: '12px',
+          borderRadius: '4px',
+          border: '1px solid #ccc',
+        }}
+      />
+      <div>
+        <button
+          onClick={handlePasswordSubmit}
+          style={{
+            padding: '8px 16px',
+            fontSize: '1rem',
+            backgroundColor: '#28a745',
+            color: '#fff',
+            borderRadius: '4px',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          Submit
+        </button>
+        <button
+          onClick={() => setIsModalOpen(false)} // Close modal if cancel
+          style={{
+            padding: '8px 16px',
+            fontSize: '1rem',
+            backgroundColor: '#ccc',
+            color: '#fff',
+            borderRadius: '4px',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
         </div>
       )}
       {activeSection === 'education' && renderEducationSection()}
