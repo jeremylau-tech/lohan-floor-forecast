@@ -72,9 +72,11 @@ app.post('/api/sendDailyUpdate', async (req, res) => {
     const fullMessage = message + dayMessages + `
 
 Jangan lupa untuk bersiap sedia!  
+
 #Lohan #FloodForecast  
-#YSS Sukarelawan Siswa  
-https://lohan-floor-forecast-lok4.vercel.app/
+#YSSSukarelawanSiswa
+
+Laman Web: https://safe-lohan.vercel.app/
     `;
 
     await bot.sendMessage(TELEGRAM_CHAT_ID, fullMessage, { parse_mode: 'Markdown' });
