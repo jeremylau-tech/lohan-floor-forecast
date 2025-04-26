@@ -14,33 +14,50 @@ ChartJS.register(
   Tooltip,
   Legend
 );
+
 function App() {
   const [forecast, setForecast] = useState(null);
   const [status, setStatus] = useState('loading');
   const [activeSection, setActiveSection] = useState('forecast');
 
   useEffect(() => {
+    let timeoutId;
+  
     const fetchForecast = async () => {
       try {
-
+        // Start a timeout of 10 seconds
+        timeoutId = setTimeout(() => {
+          setStatus('timeout'); // If backend slow, after 10s, show "still trying..."
+        }, 10000);
+  
         const res = await fetch('https://lohan-floor-forecast.onrender.com/api/weather');
+        if (!res.ok) throw new Error('Network response was not ok');
+  
         const data = await res.json();
+        clearTimeout(timeoutId); // Cancel the timeout if success
         setForecast(data);
         setStatus('loaded');
       } catch (err) {
         console.error(err);
-        setStatus('error');
+        clearTimeout(timeoutId);
+        setStatus('error'); // Only true error
       }
     };
-
+  
     fetchForecast();
+  
+    // Cleanup timeout if component unmounts
+    return () => clearTimeout(timeoutId);
   }, []);
+  
 
   const renderStatus = () => {
-    if (status === 'loading') return <p style={{ color: 'orange' }}>Loading forecast...</p>;
-    if (status === 'error') return <p style={{ color: 'red' }}>Failed to load forecast</p>;
+    if (status === 'loading') return <p style={{ color: 'orange' }}>⏳ Loading forecast... Please wait.</p>;
+    if (status === 'timeout') return <p style={{ color: 'orange' }}>⚠️ Backend slow... still trying to load.</p>;
+    if (status === 'error') return <p style={{ color: 'red' }}>❌ Failed to load forecast. Please refresh later.</p>;
     return null;
   };
+  
 
   const renderForecast = () => {
     if (!forecast || !forecast.current || !forecast.historicalRainfall || !forecast.multiDayForecast) {
