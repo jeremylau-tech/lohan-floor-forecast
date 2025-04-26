@@ -27,8 +27,6 @@ const sendTelegramAlert = (message) => {
 
 // ========== DAILY TELEGRAM UPDATE ROUTE ==========
 
-// ========== DAILY TELEGRAM UPDATE ROUTE ==========
-
 app.post('/api/sendDailyUpdate', async (req, res) => {
   const now = new Date();
   const MYtime = now.toLocaleString('en-MY', { timeZone: 'Asia/Kuching' });
@@ -46,38 +44,47 @@ app.post('/api/sendDailyUpdate', async (req, res) => {
     }, 0);
 
     // Next 3 days general rain (next 24 x 3h blocks)
-    const next3DaysRain = forecastList.slice(0, 24).reduce((total, hour) => {
-      return total + (hour.rain?.['3h'] || 0);
-    }, 0);
+    const nextDaysRain = [forecastList.slice(8, 16), forecastList.slice(16, 24), forecastList.slice(24, 32)];
 
-    const todayRisk = todayRain > 20 ? 'High' : 'Low';
-    const nextDaysRisk = next3DaysRain > 30 ? 'High' : 'Low';
+    const todayRisk = todayRain > 20 ? 'Tinggi' : 'Rendah';
 
     const message = `
-🌤️ *Lohan Daily Weather Update*
-📅 Date: ${MYtime}
+🌤️ *Kemaskini Cuaca Harian Lohan*  
+📅 Tarikh: ${MYtime}
 
-☔ *Today's Forecast*:
-- Total Rain: *${todayRain.toFixed(1)} mm*
-- Risk: *${todayRisk}*
+☔ *Ramalan Hari Ini*:
+- Jumlah Hujan: *${todayRain.toFixed(1)} mm*
+- Risiko: *${todayRisk}*
 
-🔮 *Upcoming 3 Days Outlook*:
-- Total Rain: *${next3DaysRain.toFixed(1)} mm*
-- Risk: *${nextDaysRisk}*
+🔮 *Ramalan 3 Hari Akan Datang*:
 
-Stay prepared and safe!  
-#Lohan #FloodForecast
+`;
+
+    let dayMessages = '';
+    nextDaysRain.forEach((dayData, index) => {
+      const dayRain = dayData.reduce((total, hour) => total + (hour.rain?.['3h'] || 0), 0);
+      const risk = dayRain > 20 ? 'Tinggi' : 'Rendah';
+      dayMessages += `\nHari ${index + 1}:  
+        - Jumlah Hujan: *${dayRain.toFixed(1)} mm*  
+        - Risiko: *${risk}*`;
+    });
+
+    const fullMessage = message + dayMessages + `
+
+Jangan lupa untuk bersiap sedia!  
+#Lohan #FloodForecast  
+#YSS Sukarelawan Siswa  
+https://lohan-floor-forecast-lok4.vercel.app/
     `;
 
-    await bot.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'Markdown' });
+    await bot.sendMessage(TELEGRAM_CHAT_ID, fullMessage, { parse_mode: 'Markdown' });
 
-    res.status(200).send('✅ Daily update sent to Telegram!');
+    res.status(200).send('✅ Kemaskini harian dihantar ke Telegram!');
   } catch (error) {
-    console.error('❌ Error sending daily update:', error.message);
-    res.status(500).send('Failed to send daily update');
+    console.error('❌ Ralat menghantar kemaskini harian:', error.message);
+    res.status(500).send('Gagal menghantar kemaskini harian');
   }
 });
-
 
 // ========== MAIN FORECAST ROUTE ==========
 app.get('/api/weather', async (req, res) => {
