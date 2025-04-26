@@ -25,6 +25,66 @@ const sendTelegramAlert = (message) => {
   bot.sendMessage(TELEGRAM_CHAT_ID, message);
 };
 
+// ========== DAILY TELEGRAM UPDATE ROUTE ==========
+
+// ========== DAILY TELEGRAM UPDATE ROUTE ==========
+
+app.post('/api/sendDailyUpdate', async (req, res) => {
+  const authHeader = req.headers['authorization'];
+
+  // Check if Authorization header is present and valid
+  if (!authHeader || authHeader !== `Bearer ${process.env.DAILY_UPDATE_SECRET}`) {
+    return res.status(401).send('Unauthorized');  // If invalid or missing, return Unauthorized error
+  }
+
+  const now = new Date();
+  const MYtime = now.toLocaleString('en-MY', { timeZone: 'Asia/Kuching' });
+
+  try {
+    const response = await axios.get(
+      `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${WEATHER_API}&units=metric`
+    );
+
+    const forecastList = response.data.list;
+
+    // Today's rain (next 8 x 3h blocks = 24 hours)
+    const todayRain = forecastList.slice(0, 8).reduce((total, hour) => {
+      return total + (hour.rain?.['3h'] || 0);
+    }, 0);
+
+    // Next 3 days general rain (next 24 x 3h blocks)
+    const next3DaysRain = forecastList.slice(0, 24).reduce((total, hour) => {
+      return total + (hour.rain?.['3h'] || 0);
+    }, 0);
+
+    const todayRisk = todayRain > 20 ? 'High' : 'Low';
+    const nextDaysRisk = next3DaysRain > 30 ? 'High' : 'Low';
+
+    const message = `
+🌤️ *Lohan Daily Weather Update*
+📅 Date: ${MYtime}
+
+☔ *Today's Forecast*:
+- Total Rain: *${todayRain.toFixed(1)} mm*
+- Risk: *${todayRisk}*
+
+🔮 *Upcoming 3 Days Outlook*:
+- Total Rain: *${next3DaysRain.toFixed(1)} mm*
+- Risk: *${nextDaysRisk}*
+
+Stay prepared and safe!  
+#Lohan #FloodForecast
+    `;
+
+    await bot.sendMessage(TELEGRAM_CHAT_ID, message, { parse_mode: 'Markdown' });
+
+    res.status(200).send('✅ Daily update sent to Telegram!');
+  } catch (error) {
+    console.error('❌ Error sending daily update:', error.message);
+    res.status(500).send('Failed to send daily update');
+  }
+});
+
 // ========== MAIN FORECAST ROUTE ==========
 app.get('/api/weather', async (req, res) => {
   const now = new Date();
