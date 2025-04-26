@@ -57,7 +57,25 @@ function App() {
     if (status === 'error') return <p style={{ color: 'red' }}>❌ Failed to load forecast. Please refresh later.</p>;
     return null;
   };
-  
+
+  const sendDailyUpdate = async () => {
+    try {
+      const res = await fetch('https://lohan-floor-forecast.onrender.com/api/sendDailyUpdate', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Lohan123',  // Replace with your actual secret password
+        },
+      });
+      if (res.ok) {
+        alert('✅ Daily update sent to Telegram!');
+      } else {
+        alert('❌ Failed to send daily update.');
+      }
+    } catch (error) {
+      console.error('Error sending daily update:', error);
+      alert('❌ Error occurred while sending daily update.');
+    }
+  };
 
   const renderForecast = () => {
     if (!forecast || !forecast.current || !forecast.historicalRainfall || !forecast.multiDayForecast) {
@@ -338,6 +356,23 @@ function App() {
         <div>
           {renderStatus()}
           {forecast && forecast.current && renderForecast()}
+
+          {/* Button to send Telegram daily update */}
+          <button
+            onClick={sendDailyUpdate}
+            style={{
+              marginTop: '20px',
+              padding: '12px 24px',
+              fontSize: '1rem',
+              backgroundColor: '#28a745',
+              color: '#fff',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            📬 Send Today's Update to Telegram
+          </button>
         </div>
       )}
       {activeSection === 'education' && renderEducationSection()}
