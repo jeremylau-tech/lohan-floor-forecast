@@ -71,6 +71,7 @@ const [isModalOpen, setIsModalOpen] = useState(false);
     if (password === 'abc123') {
       setIsPasswordCorrect(true);
       setIsModalOpen(false); // Close the modal after successful password entry
+      sendDailyUpdate(); 
     } else {
       alert('❌ Incorrect password');
     }
