@@ -57,14 +57,11 @@ function App() {
     if (status === 'error') return <p style={{ color: 'red' }}>❌ Failed to load forecast. Please refresh later.</p>;
     return null;
   };
-
   const sendDailyUpdate = async () => {
     try {
       const res = await fetch('https://lohan-floor-forecast.onrender.com/api/sendDailyUpdate', {
         method: 'POST',
-        headers: {
-          'Authorization': 'Lohan123',  // Replace with your actual secret password
-        },
+        // Authorization header is removed since no authentication is required
       });
       if (res.ok) {
         alert('✅ Daily update sent to Telegram!');
@@ -76,6 +73,7 @@ function App() {
       alert('❌ Error occurred while sending daily update.');
     }
   };
+  
 
   const renderForecast = () => {
     if (!forecast || !forecast.current || !forecast.historicalRainfall || !forecast.multiDayForecast) {
