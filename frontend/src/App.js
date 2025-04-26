@@ -22,7 +22,7 @@ function App() {
   useEffect(() => {
     const fetchForecast = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/weather'); // Full URL to backend
+        const res = await fetch('https://lohan-floor-forecast.onrender.com/'); // Full URL to backend
         const data = await res.json();
         setForecast(data);
         setStatus('loaded');
